@@ -11,25 +11,33 @@ type Layer = { id: number; kind: "text" | "image"; value: string; color: string;
 function Mug({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
   const group = useRef<THREE.Group>(null);
   useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.12; });
-  const profile = useMemo(() => {
-    const points = [new THREE.Vector2(0.01, 0), new THREE.Vector2(0.48, 0), new THREE.Vector2(0.53, 0.08), new THREE.Vector2(0.57, 0.82), new THREE.Vector2(0.54, 0.91), new THREE.Vector2(0.48, 0.94), new THREE.Vector2(0.47, 0.89), new THREE.Vector2(0.49, 0.82), new THREE.Vector2(0.47, 0.12), new THREE.Vector2(0.01, 0.12)];
-    return new THREE.LatheGeometry(points, 96);
-  }, []);
   return <group ref={group} position={[0, -0.46, 0]}>
-    <mesh geometry={profile}>
-      <meshStandardMaterial color={color} map={texture} transparent alphaTest={0.015} roughness={0.2} metalness={0.01} />
+    <mesh position={[0, 0.43, 0]}>
+      <cylinderGeometry args={[0.52, 0.48, 0.86, 128, 1, true]} />
+      <meshStandardMaterial color={color} map={texture} roughness={0.2} metalness={0.01} />
     </mesh>
-    <mesh position={[0.52, 0.47, 0]} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh position={[0, 0.435, 0]}>
+      <cylinderGeometry args={[0.475, 0.435, 0.82, 96, 1, true]} />
+      <meshStandardMaterial color="#eee9e2" side={THREE.BackSide} roughness={0.28} />
+    </mesh>
+    <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[0.435, 96]} />
+      <meshStandardMaterial color="#e9e4dd" />
+    </mesh>
+    <mesh position={[0, 0.86, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[0.497, 0.025, 16, 128]} />
+      <meshStandardMaterial color={color} roughness={0.2} />
+    </mesh>
+    <mesh position={[0.53, 0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
       <torusGeometry args={[0.29, 0.075, 24, 64]} />
       <meshStandardMaterial color={handleColor} roughness={0.2} />
     </mesh>
-    <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.48, 64]} />
-      <meshStandardMaterial color={color} />
+    <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[0.48, 96]} />
+      <meshStandardMaterial color={color} roughness={0.24} />
     </mesh>
   </group>;
 }
-
 function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
   return <Canvas camera={{ position: [1.9, 1.35, 2.3], fov: 34 }} dpr={[1, 1.7]}>
     <ambientLight intensity={1.6} />
@@ -80,6 +88,8 @@ export default function Storefront() {
       }));
       if (cancelled) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       layers.forEach((layer, index) => {
         ctx.save();
         ctx.translate(1024 + layer.x * 6, 512 - layer.y * 4.5);
