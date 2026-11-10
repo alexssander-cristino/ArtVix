@@ -7,35 +7,40 @@ import * as THREE from "three";
 import { ArrowRight, Check, ChevronDown, ImagePlus, Minus, Plus, RotateCcw, ShoppingBag, Sparkles, Type, Upload, WandSparkles, X } from "lucide-react";
 
 type Layer = { id: number; kind: "text" | "image"; value: string; color: string; font: string; size: number; x: number; y: number };
+type Product = { id: string; name: string; description: string; price: number; image: string };
 
 function Mug({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
   const group = useRef<THREE.Group>(null);
-  useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.12; });
+  const handleCurve = useMemo(() => new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.46, 0.69, 0), new THREE.Vector3(0.72, 0.72, 0),
+    new THREE.Vector3(0.91, 0.56, 0), new THREE.Vector3(0.94, 0.36, 0),
+    new THREE.Vector3(0.82, 0.17, 0), new THREE.Vector3(0.48, 0.19, 0)
+  ]), []);
+  useFrame((_, delta) => { if (group.current) group.current.rotation.y += delta * 0.075; });
   return <group ref={group} position={[0, -0.46, 0]}>
-    <mesh position={[0, 0.43, 0]}>
-      <cylinderGeometry args={[0.52, 0.48, 0.86, 128, 1, true]} />
-      <meshStandardMaterial color={color} map={texture} roughness={0.2} metalness={0.01} />
+    <mesh>
+      <latheGeometry args={[[
+        new THREE.Vector2(0, 0.035), new THREE.Vector2(0.39, 0.035),
+        new THREE.Vector2(0.455, 0.055), new THREE.Vector2(0.49, 0.105),
+        new THREE.Vector2(0.515, 0.78), new THREE.Vector2(0.515, 0.835),
+        new THREE.Vector2(0.505, 0.855)
+      ], 160]} />
+      <meshPhysicalMaterial color={color} map={texture} roughness={0.19} metalness={0} clearcoat={0.42} clearcoatRoughness={0.16} />
     </mesh>
-    <mesh position={[0, 0.435, 0]}>
-      <cylinderGeometry args={[0.475, 0.435, 0.82, 96, 1, true]} />
-      <meshStandardMaterial color="#eee9e2" side={THREE.BackSide} roughness={0.28} />
+    <mesh position={[0, 0.015, 0]}>
+      <cylinderGeometry args={[0.475, 0.405, 0.79, 128, 1, true]} />
+      <meshPhysicalMaterial color="#f0ece5" side={THREE.BackSide} roughness={0.24} clearcoat={0.25} />
     </mesh>
-    <mesh position={[0, 0.045, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.435, 96]} />
-      <meshStandardMaterial color="#e9e4dd" />
+    <mesh position={[0, 0.075, 0]}>
+      <cylinderGeometry args={[0.405, 0.405, 0.025, 128]} />
+      <meshStandardMaterial color="#e7e1d8" roughness={0.32} />
     </mesh>
-    <mesh position={[0, 0.86, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.497, 0.025, 16, 128]} />
-      <meshStandardMaterial color={color} roughness={0.2} />
+    <mesh position={[0, 0.855, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[0.493, 0.022, 20, 160]} />
+      <meshPhysicalMaterial color={color} roughness={0.17} clearcoat={0.5} />
     </mesh>
-    <mesh position={[0.53, 0.46, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.29, 0.075, 24, 64]} />
-      <meshStandardMaterial color={handleColor} roughness={0.2} />
-    </mesh>
-    <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.48, 96]} />
-      <meshStandardMaterial color={color} roughness={0.24} />
-    </mesh>
+    <mesh><tubeGeometry args={[handleCurve, 96, 0.073, 24, false]} /><meshPhysicalMaterial color={handleColor} roughness={0.18} clearcoat={0.45} /></mesh>
+    <mesh position={[0, 0.025, 0]}><cylinderGeometry args={[0.445, 0.445, 0.045, 128]} /><meshStandardMaterial color={color} roughness={0.24} /></mesh>
   </group>;
 }
 function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
@@ -57,7 +62,30 @@ export default function Storefront() {
   const [showAR, setShowAR] = useState(false);
   const [modelUrl, setModelUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [productPrice, setProductPrice] = useState("59.90");
+  const [productImage, setProductImage] = useState("");
   const activeLayer = layers.find(layer => layer.id === active);
+  useEffect(() => {
+    try { const saved = localStorage.getItem("artvix-products"); if (saved) setProducts(JSON.parse(saved) as Product[]); }
+    catch { /* mantém a vitrine disponível se o armazenamento estiver inválido */ }
+  }, []);
+  useEffect(() => { localStorage.setItem("artvix-products", JSON.stringify(products)); }, [products]);
+  const currentPrice = selectedProduct?.price ?? 59.9;
+  const saveProduct = () => {
+    const name = productName.trim();
+    const price = Number(productPrice.replace(",", "."));
+    if (!name || !Number.isFinite(price) || price <= 0) { alert("Informe o nome do produto e um preço válido."); return; }
+    setProducts(prev => [{ id: crypto.randomUUID(), name, description: productDescription.trim(), price, image: productImage }, ...prev]);
+    setProductName(""); setProductDescription(""); setProductPrice("59.90"); setProductImage("");
+  };
+  const selectProduct = (product: Product) => {
+    setSelectedProduct(product);
+    document.getElementById("personalizar")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const texture = useMemo(() => {
     const canvas = document.createElement("canvas");
@@ -146,16 +174,31 @@ export default function Storefront() {
   };
 
   return <main>
-    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">A</span> artvix<span className="brand-dot">.</span></a><nav><a href="#colecao">Coleção</a><a href="#como-funciona">Como funciona</a><a href="#personalizar">Personalizador 3D</a></nav><button className="bag"><ShoppingBag size={17}/> <span>Minha sacola</span></button></header>
+    <header className="topbar"><a className="brand" href="#"><span className="brand-mark">A</span> artvix<span className="brand-dot">.</span></a><nav><a href="#colecao">Coleção</a><a href="#gerenciar">Cadastrar produtos</a><a href="#como-funciona">Como funciona</a><a href="#personalizar">Personalizador 3D</a></nav><button className="bag"><ShoppingBag size={17}/> <span>Minha sacola</span></button></header>
     <section className="hero">
       <div className="hero-copy"><span className="eyebrow"><Sparkles size={14}/> PRESENTES COM A SUA IDENTIDADE</span><h1>O extraordinário<br/>está nos <em>detalhes.</em></h1><p>Transforme ideias em objetos únicos. Personalize em 3D, explore cada detalhe e crie algo que é só seu.</p><a className="primary" href="#personalizar">Criar meu produto <ArrowRight size={17}/></a><div className="hero-note"><span className="note-line"/> Feito por você. Produzido com carinho.</div></div>
       <div className="hero-art"><div className="orb orb-one"/><div className="orb orb-two"/><div className="hero-card"><div className="hero-mug"><div className="mug-handle"/><div className="mug-face">A<span>✳</span></div></div><span className="floating-tag">feito para você <Sparkles size={12}/></span></div><div className="hero-caption">OBJETOS QUE CONTAM HISTÓRIAS <span>01 / 04</span></div></div>
     </section>
     <section className="intro" id="colecao"><div><span className="eyebrow">SUA IDEIA, SUA PEÇA</span><h2>Peças únicas.<br/><em>Do seu jeito.</em></h2></div><p>Uma caneca com uma memória, um presente com significado, uma criação que começa na sua imaginação. Aqui, cada detalhe importa.</p></section>
+    <section className="catalog-section"><div className="section-heading"><div><span className="eyebrow">VITRINE ART VIX</span><h2>Nossa <em>coleção.</em></h2></div><span className="step-indicator">{products.length} PRODUTO(S) CADASTRADO(S)</span></div>
+      <div className="catalog-grid">{products.map(product => <article className="product-card" key={product.id}><div className="product-card-image">{product.image ? <img src={product.image} alt={product.name}/> : <div className="product-placeholder"><span>A</span><small>ART VIX</small></div>}</div><div className="product-card-info"><div><h3>{product.name}</h3><strong>R$ {product.price.toFixed(2).replace(".", ",")}</strong></div>{product.description && <p>{product.description}</p>}<button onClick={() => selectProduct(product)}>Personalizar produto <ArrowRight size={15}/></button></div></article>)}
+      {products.length===0 && <div className="empty-catalog"><Sparkles size={22}/><strong>Seus produtos aparecerão aqui</strong><p>Cadastre um produto para ele entrar automaticamente nesta vitrine.</p><a href="#gerenciar">Cadastrar primeiro produto</a></div>}</div>
+    </section>
+    <section className="manage-section" id="gerenciar"><div className="manage-heading"><span className="eyebrow">PAINEL DA LOJA</span><h2>Cadastro de <em>produtos.</em></h2><p>Cadastre os itens da loja e veja cada um aparecer na coleção.</p></div>
+      <div className="manage-form"><div className="manage-fields">
+        <label>Nome do produto<input value={productName} onChange={e=>setProductName(e.target.value)} placeholder="Ex.: Caneca personalizada"/></label>
+        <label>Preço (R$)<input type="number" min="0.01" step="0.01" value={productPrice} onChange={e=>setProductPrice(e.target.value)}/></label>
+        <label className="wide">Descrição<textarea value={productDescription} onChange={e=>setProductDescription(e.target.value)} placeholder="Descreva o produto, material e detalhes..."/></label>
+        <label className="wide">Imagem do produto<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>5*1024*1024){alert("A imagem deve ter até 5 MB.");return;}const reader=new FileReader();reader.onload=()=>setProductImage(String(reader.result));reader.readAsDataURL(file);}}/></label>
+      </div>
+      {productImage && <div className="product-image-preview"><img src={productImage} alt="Prévia do produto"/><button type="button" onClick={()=>setProductImage("")}>Remover imagem</button></div>}
+      <button className="save-product" onClick={saveProduct}><Plus size={16}/> Cadastrar produto na vitrine</button>
+      {products.length>0 && <div className="registered-products"><strong>Produtos cadastrados</strong>{products.map(product=><div key={product.id}><span>{product.name}</span><b>R$ {product.price.toFixed(2).replace(".", ",")}</b><button onClick={()=>setProducts(prev=>prev.filter(item=>item.id!==product.id))} aria-label={"Excluir "+product.name}><X size={15}/></button></div>)}</div>}</div>
+    </section>
     <section className="customizer-section" id="personalizar">
       <div className="section-heading"><div><span className="eyebrow">ESTÚDIO CRIATIVO ART VIX</span><h2>Crie sua <em>caneca.</em></h2></div><span className="step-indicator">01 — PERSONALIZAÇÃO 3D</span></div>
       <div className="editor">
-        <div className="preview-column"><div className="preview-top"><span><span className="live-dot"/> VISUALIZAÇÃO EM TEMPO REAL</span><button onClick={reset}><RotateCcw size={14}/> Restaurar</button></div><div className="preview"><MugScene color={mugColor} handleColor={handleColor} texture={texture}/><div className="preview-hint">Arraste para girar · Scroll para aproximar</div></div><div className="preview-bottom"><span>CANeca DE CERÂMICA · 330 ML</span><span>R$ 59,90</span></div></div>
+        <div className="preview-column"><div className="preview-top"><span><span className="live-dot"/> VISUALIZAÇÃO EM TEMPO REAL</span><button onClick={reset}><RotateCcw size={14}/> Restaurar</button></div><div className="preview"><MugScene color={mugColor} handleColor={handleColor} texture={texture}/><div className="preview-hint">Arraste para girar · Scroll para aproximar</div></div><div className="preview-bottom"><span>{(selectedProduct?.name || "CANECA DE CERÂMICA").toUpperCase()} · PERSONALIZÁVEL</span><span>R$ {currentPrice.toFixed(2).replace(".", ",")}</span></div></div>
         <aside className="controls">
           <div className="control-heading"><div><span className="eyebrow">SEU PROJETO</span><h3>Personalização</h3></div><span className="step-count">1/3</span></div>
           <div className="control-group"><label>Cor da caneca</label><div className="swatches">{["#f3eee7","#ffffff","#222222","#d8a7a1","#a8b8a0","#c2b4d8"].map(c=><button key={c} aria-label={`Cor ${c}`} className={mugColor===c?"swatch selected":"swatch"} style={{background:c}} onClick={()=>setMugColor(c)}/>)}</div></div>
@@ -164,7 +207,7 @@ export default function Storefront() {
           {tab==="text" ? <div className="control-group"><label>Seu texto</label><input value={activeLayer?.kind==="text"?activeLayer.value:""} onChange={e=>updateLayer({value:e.target.value})} placeholder="Digite seu nome ou frase"/><div className="field-row"><div><label>Fonte</label><select value={activeLayer?.font||"Arial"} onChange={e=>updateLayer({font:e.target.value})}><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Courier New</option><option>Trebuchet MS</option></select></div><div><label>Tamanho</label><input type="range" min="20" max="90" value={activeLayer?.size||42} onChange={e=>updateLayer({size:Number(e.target.value)})}/></div></div><div className="field-row"><div><label>Cor do texto</label><input type="color" value={activeLayer?.color||"#ffffff"} onChange={e=>updateLayer({color:e.target.value})}/></div><div><label>Posição horizontal</label><input type="range" min="-80" max="80" value={activeLayer?.x||0} onChange={e=>updateLayer({x:Number(e.target.value)})}/></div></div><div className="control-group"><label>Altura do texto</label><input type="range" min="-80" max="80" value={activeLayer?.y||0} onChange={e=>updateLayer({y:Number(e.target.value)})}/></div><button className="add-layer" onClick={addText}><Plus size={15}/> Adicionar outro texto</button></div> : <div className="upload-zone"><Upload size={22}/><strong>Adicione sua imagem</strong><span>PNG, JPG ou WebP · até 8 MB</span><label className="upload-button">Escolher arquivo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>upload(e.target.files?.[0])}/></label>{activeLayer?.kind==="image"&&<><div className="control-group"><label>Tamanho da imagem</label><input type="range" min="20" max="90" value={activeLayer.size} onChange={e=>updateLayer({size:Number(e.target.value)})}/></div><div className="control-group"><label>Posição horizontal</label><input type="range" min="-120" max="120" value={activeLayer.x} onChange={e=>updateLayer({x:Number(e.target.value)})}/></div><div className="control-group"><label>Altura da imagem</label><input type="range" min="-80" max="80" value={activeLayer.y} onChange={e=>updateLayer({y:Number(e.target.value)})}/></div></>}</div>}
           <div className="layers"><div className="layers-title">ELEMENTOS <span>{layers.length}</span></div>{layers.map(layer=><div key={layer.id} className={active===layer.id?"layer active":"layer"} onClick={()=>setActive(layer.id)}><span>{layer.kind==="text"?<Type size={14}/>:<ImagePlus size={14}/>}</span><strong>{layer.kind==="text"?layer.value:"Imagem enviada"}</strong><button aria-label="Remover elemento" onClick={e=>{e.stopPropagation();setLayers(prev=>prev.filter(l=>l.id!==layer.id));}}><X size={14}/></button></div>)}</div>
           <button className="ar-button" onClick={()=>setShowAR(true)}><WandSparkles size={17}/> Visualizar no meu ambiente <ArrowRight size={16}/></button>
-          <div className="purchase"><div><span>Valor unitário</span><strong>R$ 59,90</strong></div><div className="quantity"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}><Minus size={13}/></button>{quantity}<button onClick={()=>setQuantity(quantity+1)}><Plus size={13}/></button></div><button className="checkout" onClick={saveDesign}>Salvar criação · R$ {(59.9*quantity).toFixed(2).replace(".",",")}</button></div>
+          <div className="purchase"><div><span>Valor unitário</span><strong>R$ {currentPrice.toFixed(2).replace(".", ",")}</strong></div><div className="quantity"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}><Minus size={13}/></button>{quantity}<button onClick={()=>setQuantity(quantity+1)}><Plus size={13}/></button></div><button className="checkout" onClick={saveDesign}>Salvar criação · R$ {(currentPrice*quantity).toFixed(2).replace(".",",")}</button></div>
           <p className="secure-note"><Check size={13}/> Sua criação fica salva neste dispositivo nesta demonstração.</p>
         </aside>
       </div>
