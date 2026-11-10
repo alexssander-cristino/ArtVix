@@ -58,7 +58,7 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
       <latheGeometry args={[innerProfile, 192]} />
       <meshPhysicalMaterial color={color} side={THREE.DoubleSide} roughness={0.24} />
     </mesh>
-    <mesh position={[0, 0.161, 0]}>
+    <mesh position={[0, 0.161, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <circleGeometry args={[0.405, 160]} />
       <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.3} />
     </mesh>
