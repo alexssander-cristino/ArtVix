@@ -78,6 +78,7 @@ function MugScene({ color, handleColor, texture }: { color: string; handleColor:
     <directionalLight position={[3, 2, -2]} intensity={0.85} />
     <pointLight position={[0, 1.8, 2.5]} intensity={0.35} color="#fff4e8" />
     <Mug color={color} handleColor={handleColor} texture={texture} />
+    <ContactShadows position={[0, -0.49, 0]} opacity={0.3} scale={3.2} blur={2.8} far={1.3} resolution={512} />
     <OrbitControls enablePan={false} minDistance={2.4} maxDistance={5.2} minPolarAngle={0.35} maxPolarAngle={2.25} />
   </Canvas>;
 }
