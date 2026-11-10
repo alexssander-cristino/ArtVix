@@ -1,2 +1,2 @@
-import Storefront from "@/components/storefront";
-export default function Home() { return <Storefront />; }
+import StorefrontShell from "@/components/storefront-shell";
+export default function Home() { return <StorefrontShell />; }
