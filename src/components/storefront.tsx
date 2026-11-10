@@ -10,63 +10,73 @@ type Layer = { id: number; kind: "text" | "image"; value: string; color: string;
 type Product = { id: string; name: string; description: string; price: number; image: string };
 
 function Mug({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
+  const outerProfile = useMemo(() => [
+    new THREE.Vector2(0, 0.035),
+    new THREE.Vector2(0.34, 0.035),
+    new THREE.Vector2(0.405, 0.04),
+    new THREE.Vector2(0.455, 0.065),
+    new THREE.Vector2(0.482, 0.105),
+    new THREE.Vector2(0.493, 0.17),
+    new THREE.Vector2(0.501, 0.32),
+    new THREE.Vector2(0.505, 0.52),
+    new THREE.Vector2(0.505, 0.72),
+    new THREE.Vector2(0.502, 0.82),
+    new THREE.Vector2(0.496, 0.852),
+    new THREE.Vector2(0.487, 0.86)
+  ], []);
+  const innerProfile = useMemo(() => [
+    new THREE.Vector2(0.466, 0.855),
+    new THREE.Vector2(0.474, 0.82),
+    new THREE.Vector2(0.476, 0.70),
+    new THREE.Vector2(0.474, 0.48),
+    new THREE.Vector2(0.466, 0.25),
+    new THREE.Vector2(0.445, 0.16),
+    new THREE.Vector2(0.405, 0.125)
+  ], []);
   const handleCurve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.455, 0.68, 0),
-    new THREE.Vector3(0.68, 0.70, 0),
-    new THREE.Vector3(0.91, 0.59, 0),
-    new THREE.Vector3(0.96, 0.43, 0),
-    new THREE.Vector3(0.91, 0.25, 0),
-    new THREE.Vector3(0.70, 0.16, 0),
-    new THREE.Vector3(0.455, 0.19, 0)
-  ]), []);
+    new THREE.Vector3(0.455, 0.70, 0.015),
+    new THREE.Vector3(0.60, 0.755, 0.015),
+    new THREE.Vector3(0.79, 0.70, 0.015),
+    new THREE.Vector3(0.91, 0.56, 0.015),
+    new THREE.Vector3(0.92, 0.39, 0.015),
+    new THREE.Vector3(0.82, 0.235, 0.015),
+    new THREE.Vector3(0.63, 0.18, 0.015),
+    new THREE.Vector3(0.455, 0.225, 0.015)
+  ], false, "centripetal", 0.35), []);
   return <group position={[0, -0.43, 0]}>
-    {/* Caneca cilíndrica clássica, levemente abaulada na base */}
     <mesh castShadow receiveShadow>
-      <latheGeometry args={[[
-        new THREE.Vector2(0, 0.035),
-        new THREE.Vector2(0.37, 0.035),
-        new THREE.Vector2(0.435, 0.045),
-        new THREE.Vector2(0.475, 0.075),
-        new THREE.Vector2(0.49, 0.12),
-        new THREE.Vector2(0.505, 0.30),
-        new THREE.Vector2(0.515, 0.68),
-        new THREE.Vector2(0.515, 0.82),
-        new THREE.Vector2(0.51, 0.855),
-        new THREE.Vector2(0.495, 0.865)
-      ], 192]} />
-      <meshPhysicalMaterial color={color} map={texture} roughness={0.16} metalness={0} clearcoat={0.32} clearcoatRoughness={0.12} />
+      <latheGeometry args={[outerProfile, 192]} />
+      <meshPhysicalMaterial color={color} map={texture} roughness={0.2} metalness={0} clearcoat={0.22} clearcoatRoughness={0.18} />
     </mesh>
-    {/* Parede interna e fundo visíveis pela abertura */}
-    <mesh position={[0, 0.015, 0]}>
-      <cylinderGeometry args={[0.477, 0.405, 0.79, 160, 1, true]} />
-      <meshPhysicalMaterial color="#f8f6f2" side={THREE.BackSide} roughness={0.2} />
+    <mesh>
+      <latheGeometry args={[innerProfile, 192]} />
+      <meshPhysicalMaterial color="#f7f5f1" side={THREE.DoubleSide} roughness={0.24} />
     </mesh>
-    <mesh position={[0, 0.075, 0]}>
-      <cylinderGeometry args={[0.405, 0.405, 0.025, 128]} />
-      <meshStandardMaterial color="#e9e5df" roughness={0.28} />
+    <mesh position={[0, 0.132, 0]}>
+      <circleGeometry args={[0.405, 160]} />
+      <meshStandardMaterial color="#e9e5df" side={THREE.DoubleSide} roughness={0.3} />
     </mesh>
-    <mesh position={[0, 0.86, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[0.498, 0.014, 20, 192]} />
-      <meshPhysicalMaterial color={color} roughness={0.14} clearcoat={0.45} />
+    <mesh position={[0, 0.852, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[0.491, 0.012, 16, 192]} />
+      <meshPhysicalMaterial color={color} roughness={0.18} clearcoat={0.3} />
     </mesh>
-    {/* Alça oval, espessa e integrada à lateral direita */}
-    <mesh castShadow>
-      <tubeGeometry args={[handleCurve, 128, 0.078, 32, false]} />
-      <meshPhysicalMaterial color={handleColor} roughness={0.15} clearcoat={0.38} clearcoatRoughness={0.12} />
+    <mesh castShadow receiveShadow>
+      <tubeGeometry args={[handleCurve, 160, 0.073, 32, false]} />
+      <meshPhysicalMaterial color={handleColor} roughness={0.2} clearcoat={0.25} clearcoatRoughness={0.18} />
     </mesh>
-    <mesh position={[0, 0.025, 0]}>
-      <cylinderGeometry args={[0.445, 0.445, 0.045, 128]} />
-      <meshStandardMaterial color={color} roughness={0.22} />
+    <mesh position={[0, 0.055, 0]}>
+      <cylinderGeometry args={[0.425, 0.425, 0.035, 160]} />
+      <meshStandardMaterial color={color} roughness={0.25} />
     </mesh>
   </group>;
 }
 function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
-  return <Canvas camera={{ position: [0.12, 1.12, 3.65], fov: 31 }} dpr={[1, 1.7]} shadows>
-    <hemisphereLight args={["#ffffff", "#b8a99a", 1.25]} />
-    <ambientLight intensity={0.45} />
-    <directionalLight position={[-3, 5, 4]} intensity={2.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
-    <directionalLight position={[3, 2, -2]} intensity={1.2} />
-    <pointLight position={[0, 2, 3]} intensity={0.55} color="#fff4e8" />
+  return <Canvas camera={{ position: [0.12, 1.02, 4.15], fov: 29 }} dpr={[1, 1.7]} shadows>
+    <hemisphereLight args={["#ffffff", "#a99b8d", 1.45]} />
+    <ambientLight intensity={0.3} />
+    <directionalLight position={[-3, 4, 4]} intensity={2.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+    <directionalLight position={[3, 2, -2]} intensity={0.85} />
+    <pointLight position={[0, 1.8, 2.5]} intensity={0.35} color="#fff4e8" />
     <Mug color={color} handleColor={handleColor} texture={texture} />
     <OrbitControls enablePan={false} minDistance={2.4} maxDistance={5.2} minPolarAngle={0.35} maxPolarAngle={2.25} />
   </Canvas>;
