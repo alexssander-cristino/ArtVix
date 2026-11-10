@@ -65,6 +65,7 @@ export default function Storefront() {
   const [modelUrl, setModelUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
@@ -74,8 +75,13 @@ export default function Storefront() {
   useEffect(() => {
     try { const saved = localStorage.getItem("artvix-products"); if (saved) setProducts(JSON.parse(saved) as Product[]); }
     catch { /* mantém a vitrine disponível se o armazenamento estiver inválido */ }
+    finally { setProductsLoaded(true); }
   }, []);
-  useEffect(() => { localStorage.setItem("artvix-products", JSON.stringify(products)); }, [products]);
+  useEffect(() => {
+    if (!productsLoaded) return;
+    try { localStorage.setItem("artvix-products", JSON.stringify(products)); }
+    catch { alert("O armazenamento do navegador está cheio. Remova imagens grandes dos produtos."); }
+  }, [products, productsLoaded]);
   const currentPrice = selectedProduct?.price ?? 59.9;
   const saveProduct = () => {
     const name = productName.trim();
