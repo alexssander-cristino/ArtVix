@@ -9,7 +9,7 @@ import { ArrowRight, Check, ChevronDown, ImagePlus, Minus, Plus, RotateCcw, Shop
 type Layer = { id: number; kind: "text" | "image"; value: string; color: string; font: string; size: number; x: number; y: number };
 type Product = { id: string; name: string; description: string; price: number; image: string };
 
-function Mug({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
+function Mug({ color, texture }: { color: string; texture: THREE.CanvasTexture }) {
   const outerProfile = useMemo(() => [
     new THREE.Vector2(0, 0.035),
     new THREE.Vector2(0.34, 0.035),
@@ -68,7 +68,7 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     </mesh>
     <mesh castShadow receiveShadow>
       <tubeGeometry args={[handleCurve, 160, 0.073, 32, false]} />
-      <meshPhysicalMaterial color={handleColor} roughness={0.2} clearcoat={0.25} clearcoatRoughness={0.18} />
+      <meshPhysicalMaterial color={color} roughness={0.2} clearcoat={0.25} clearcoatRoughness={0.18} />
     </mesh>
     <mesh position={[0, 0.067, 0]}>
       <cylinderGeometry args={[0.425, 0.425, 0.035, 160]} />
@@ -76,14 +76,14 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     </mesh>
   </group>;
 }
-function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
+function MugScene({ color, texture }: { color: string; texture: THREE.CanvasTexture }) {
   return <Canvas camera={{ position: [0.12, 1.18, 4.35], fov: 29 }} dpr={[1, 1.7]} shadows>
     <hemisphereLight args={["#ffffff", "#a99b8d", 1.45]} />
     <ambientLight intensity={0.3} />
     <directionalLight position={[-3, 4, 4]} intensity={2.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
     <directionalLight position={[3, 2, -2]} intensity={0.85} />
     <pointLight position={[0, 1.8, 2.5]} intensity={0.35} color="#fff4e8" />
-    <Mug color={color} handleColor={handleColor} texture={texture} />
+    <Mug color={color} texture={texture} />
     <OrbitControls enablePan={false} minDistance={2.4} maxDistance={5.2} minPolarAngle={0.35} maxPolarAngle={2.25} />
   </Canvas>;
 }
@@ -92,7 +92,6 @@ export default function Storefront() {
   const [layers, setLayers] = useState<Layer[]>([{ id: 1, kind: "text", value: "Seu nome aqui", color: "#a45d48", font: "Arial", size: 42, x: 0, y: 0 }]);
   const [active, setActive] = useState(1);
   const [mugColor, setMugColor] = useState("#f3eee7");
-  const [handleColor, setHandleColor] = useState("#f3eee7");
   const [tab, setTab] = useState<"text" | "image">("text");
   const [showAR, setShowAR] = useState(false);
   const [modelUrl, setModelUrl] = useState("");
@@ -204,7 +203,7 @@ export default function Storefront() {
     reader.readAsDataURL(file);
   };
   const updateLayer = (patch: Partial<Layer>) => setLayers(prev => prev.map(layer => layer.id === active ? { ...layer, ...patch } : layer));
-  const reset = () => { setLayers([]); setMugColor("#f3eee7"); setHandleColor("#f3eee7"); };
+  const reset = () => { setLayers([]); setMugColor("#f3eee7"); };
   const saveDesign = () => {
     const preview = document.createElement("canvas");
     preview.width = 1024; preview.height = 1024;
@@ -239,11 +238,10 @@ export default function Storefront() {
     <section className="customizer-section" id="personalizar">
       <div className="section-heading"><div><span className="eyebrow">ESTÚDIO CRIATIVO ART VIX</span><h2>Crie sua <em>caneca.</em></h2></div><span className="step-indicator">01 — PERSONALIZAÇÃO 3D</span></div>
       <div className="editor">
-        <div className="preview-column"><div className="preview-top"><span><span className="live-dot"/> VISUALIZAÇÃO EM TEMPO REAL</span><button onClick={reset}><RotateCcw size={14}/> Restaurar</button></div><div className="preview"><MugScene color={mugColor} handleColor={handleColor} texture={texture}/><div className="preview-hint">Arraste para girar · Scroll para aproximar</div></div><div className="preview-bottom"><span>{(selectedProduct?.name || "CANECA DE CERÂMICA").toUpperCase()} · PERSONALIZÁVEL</span><span>R$ {currentPrice.toFixed(2).replace(".", ",")}</span></div></div>
+        <div className="preview-column"><div className="preview-top"><span><span className="live-dot"/> VISUALIZAÇÃO EM TEMPO REAL</span><button onClick={reset}><RotateCcw size={14}/> Restaurar</button></div><div className="preview"><MugScene color={mugColor} texture={texture}/><div className="preview-hint">Arraste para girar · Scroll para aproximar</div></div><div className="preview-bottom"><span>{(selectedProduct?.name || "CANECA DE CERÂMICA").toUpperCase()} · PERSONALIZÁVEL</span><span>R$ {currentPrice.toFixed(2).replace(".", ",")}</span></div></div>
         <aside className="controls">
           <div className="control-heading"><div><span className="eyebrow">SEU PROJETO</span><h3>Personalização</h3></div><span className="step-count">1/3</span></div>
           <div className="control-group"><label>Cor da caneca</label><div className="swatches">{["#f3eee7","#ffffff","#222222","#d8a7a1","#a8b8a0","#c2b4d8"].map(c=><button key={c} aria-label={`Cor ${c}`} className={mugColor===c?"swatch selected":"swatch"} style={{background:c}} onClick={()=>setMugColor(c)}/>)}</div></div>
-          <div className="control-group"><label>Cor da alça</label><div className="swatches">{["#f3eee7","#ffffff","#222222","#d8a7a1","#a8b8a0","#c2b4d8"].map(c=><button key={c} aria-label={`Alça ${c}`} className={handleColor===c?"swatch selected":"swatch"} style={{background:c}} onClick={()=>setHandleColor(c)}/>)}</div></div>
           <div className="tabs"><button className={tab==="text"?"tab active":"tab"} onClick={()=>setTab("text")}><Type size={15}/> Texto</button><button className={tab==="image"?"tab active":"tab"} onClick={()=>setTab("image")}><ImagePlus size={15}/> Imagem / Logo</button></div>
           {tab==="text" ? <div className="control-group"><label>Seu texto</label><input value={activeLayer?.kind==="text"?activeLayer.value:""} onChange={e=>updateLayer({value:e.target.value})} placeholder="Digite seu nome ou frase"/><div className="field-row"><div><label>Fonte</label><select value={activeLayer?.font||"Arial"} onChange={e=>updateLayer({font:e.target.value})}><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Courier New</option><option>Trebuchet MS</option></select></div><div><label>Tamanho</label><input type="range" min="20" max="90" value={activeLayer?.size||42} onChange={e=>updateLayer({size:Number(e.target.value)})}/></div></div><div className="field-row"><div><label>Cor do texto</label><input type="color" value={activeLayer?.color||"#ffffff"} onChange={e=>updateLayer({color:e.target.value})}/></div><div><label>Posição horizontal</label><input type="range" min="-80" max="80" value={activeLayer?.x||0} onChange={e=>updateLayer({x:Number(e.target.value)})}/></div></div><div className="control-group"><label>Altura do texto</label><input type="range" min="-80" max="80" value={activeLayer?.y||0} onChange={e=>updateLayer({y:Number(e.target.value)})}/></div><button className="add-layer" onClick={addText}><Plus size={15}/> Adicionar outro texto</button></div> : <div className="upload-zone"><Upload size={22}/><strong>Adicione sua imagem</strong><span>PNG, JPG ou WebP · até 8 MB</span><label className="upload-button">Escolher arquivo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>upload(e.target.files?.[0])}/></label>{activeLayer?.kind==="image"&&<><div className="control-group"><label>Tamanho da imagem</label><input type="range" min="20" max="90" value={activeLayer.size} onChange={e=>updateLayer({size:Number(e.target.value)})}/></div><div className="control-group"><label>Posição horizontal</label><input type="range" min="-120" max="120" value={activeLayer.x} onChange={e=>updateLayer({x:Number(e.target.value)})}/></div><div className="control-group"><label>Altura da imagem</label><input type="range" min="-80" max="80" value={activeLayer.y} onChange={e=>updateLayer({y:Number(e.target.value)})}/></div></>}</div>}
           <div className="layers"><div className="layers-title">ELEMENTOS <span>{layers.length}</span></div>{layers.map(layer=><div key={layer.id} className={active===layer.id?"layer active":"layer"} onClick={()=>setActive(layer.id)}><span>{layer.kind==="text"?<Type size={14}/>:<ImagePlus size={14}/>}</span><strong>{layer.kind==="text"?layer.value:"Imagem enviada"}</strong><button aria-label="Remover elemento" onClick={e=>{e.stopPropagation();setLayers(prev=>prev.filter(l=>l.id!==layer.id));}}><X size={14}/></button></div>)}</div>
