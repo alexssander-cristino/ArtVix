@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -17,7 +17,7 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
   }, []);
   return <group ref={group} position={[0, -0.46, 0]}>
     <mesh geometry={profile}>
-      <meshStandardMaterial color={color} map={texture} roughness={0.22} metalness={0.02} />
+      <meshStandardMaterial color={color} map={texture} transparent alphaTest={0.015} roughness={0.2} metalness={0.01} />
     </mesh>
     <mesh position={[0.52, 0.47, 0]} rotation={[Math.PI / 2, 0, 0]}>
       <torusGeometry args={[0.29, 0.075, 24, 64]} />
@@ -49,44 +49,62 @@ export default function Storefront() {
   const [showAR, setShowAR] = useState(false);
   const [modelUrl, setModelUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeLayer = layers.find(layer => layer.id === active);
 
   const texture = useMemo(() => {
     const canvas = document.createElement("canvas");
-    canvas.width = 1024; canvas.height = 1024;
-    const ctx = canvas.getContext("2d")!;
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 1024, 1024);
+    canvas.width = 2048;
+    canvas.height = 1024;
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
     return tex;
   }, []);
 
-  const redraw = () => {
+  useEffect(() => {
+    let cancelled = false;
     const canvas = texture.image as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.clearRect(0, 0, 1024, 1024);
-    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 1024, 1024);
-    layers.forEach(layer => {
-      ctx.save();
-      ctx.translate(512 + layer.x * 4, 512 - layer.y * 4);
-      if (layer.kind === "text") {
-        ctx.fillStyle = layer.color;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = `bold ${layer.size}px ${layer.font}`;
-        ctx.fillText(layer.value, 0, 0, 850);
-      } else {
-        const img = new window.Image();
-        img.onload = () => { ctx.drawImage(img, -180, -180, 360, 360); texture.needsUpdate = true; };
-        img.src = layer.value;
-      }
-      ctx.restore();
-    });
-    texture.needsUpdate = true;
-  };
-  useMemo(() => { redraw(); return null; }, [layers, texture]);
+    const draw = async () => {
+      const loadedImages = await Promise.all(layers.map(layer => {
+        if (layer.kind !== "image") return Promise.resolve<HTMLImageElement | null>(null);
+        return new Promise<HTMLImageElement | null>(resolve => {
+          const image = new window.Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => resolve(null);
+          image.src = layer.value;
+        });
+      }));
+      if (cancelled) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      layers.forEach((layer, index) => {
+        ctx.save();
+        ctx.translate(1024 + layer.x * 6, 512 - layer.y * 4.5);
+        if (layer.kind === "text") {
+          ctx.fillStyle = layer.color;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.font = `bold ${layer.size * 2.2}px ${layer.font}`;
+          ctx.shadowColor = "rgba(0,0,0,0.08)";
+          ctx.shadowBlur = 2;
+          ctx.fillText(layer.value, 0, 0, 1500);
+        } else {
+          const image = loadedImages[index];
+          if (image) {
+            const size = layer.size * 5;
+            ctx.drawImage(image, -size / 2, -size / 2, size, size);
+          }
+        }
+        ctx.restore();
+      });
+      texture.needsUpdate = true;
+    };
+    void draw();
+    return () => { cancelled = true; };
+  }, [layers, texture]);
 
   const addText = () => {
     const id = Date.now();
@@ -144,6 +162,5 @@ export default function Storefront() {
     <section className="how" id="como-funciona"><span className="eyebrow">SIMPLES ASSIM</span><h2>Da ideia à realidade.</h2><div className="how-grid"><article><span>01</span><h3>Imagine</h3><p>Escolha seu produto e comece com uma tela em branco.</p></article><article><span>02</span><h3>Personalize</h3><p>Adicione textos, fotos e cores. Veja tudo em 3D.</p></article><article><span>03</span><h3>Receba</h3><p>Finalize seu pedido e receba uma peça feita para você.</p></article></div></section>
     <footer><a className="brand" href="#"><span className="brand-mark">A</span> artvix<span className="brand-dot">.</span></a><span>Pequenos detalhes. Grandes significados.</span><span>© 2026 ArtVix</span></footer>
     {showAR&&<div className="modal-backdrop" onClick={()=>setShowAR(false)}><div className="ar-modal" onClick={e=>e.stopPropagation()}><button className="modal-close" onClick={()=>setShowAR(false)}><X/></button><span className="eyebrow">REALIDADE AUMENTADA</span><h2>Veja sua criação<br/><em>no seu espaço.</em></h2><p>Para visualizar a caneca em tamanho real, selecione o modelo 3D GLB da peça. Em dispositivos compatíveis, o visualizador abrirá a experiência AR nativa.</p><label className="upload-button">Selecionar modelo GLB<input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" onChange={e=>{const file=e.target.files?.[0];if(file){if(modelUrl)URL.revokeObjectURL(modelUrl);setModelUrl(URL.createObjectURL(file));}}}/></label>{modelUrl&&<model-viewer src={modelUrl} ar ar-modes="webxr scene-viewer quick-look" camera-controls shadow-intensity="1" style={{width:"100%",height:320,background:"#f3eee7",borderRadius:16}}><button slot="ar-button" className="primary">Visualizar no ambiente</button></model-viewer>}<p className="secure-note">A experiência AR depende do suporte do navegador e de um modelo GLB compatível. Sem modelo, continue explorando o editor 3D.</p></div></div>}
-    <canvas ref={canvasRef} hidden/>
   </main>;
 }
