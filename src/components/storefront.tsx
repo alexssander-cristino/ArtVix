@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { ArrowRight, Check, ChevronDown, ImagePlus, Minus, Plus, RotateCcw, ShoppingBag, Sparkles, Type, Upload, WandSparkles, X } from "lucide-react";
 
@@ -23,7 +23,7 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     new THREE.Vector2(0.502, 0.82),
     new THREE.Vector2(0.496, 0.852),
     new THREE.Vector2(0.487, 0.86)
-  ], []);
+  ].map(point => new THREE.Vector2(point.x, point.y * 1.22)), []);
   const innerProfile = useMemo(() => [
     new THREE.Vector2(0.466, 0.855),
     new THREE.Vector2(0.474, 0.82),
@@ -32,7 +32,7 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     new THREE.Vector2(0.466, 0.25),
     new THREE.Vector2(0.445, 0.16),
     new THREE.Vector2(0.405, 0.125)
-  ], []);
+  ].map(point => new THREE.Vector2(point.x, point.y * 1.22)), []);
   const handleCurve = useMemo(() => new THREE.CatmullRomCurve3([
     new THREE.Vector3(0.455, 0.70, 0.015),
     new THREE.Vector3(0.60, 0.755, 0.015),
@@ -42,8 +42,8 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     new THREE.Vector3(0.82, 0.235, 0.015),
     new THREE.Vector3(0.63, 0.18, 0.015),
     new THREE.Vector3(0.455, 0.225, 0.015)
-  ], false, "centripetal", 0.35), []);
-  return <group position={[0, -0.43, 0]}>
+  ].map(point => new THREE.Vector3(point.x, point.y * 1.22, point.z)), false, "centripetal", 0.35), []);
+  return <group position={[0, -0.52, 0]}>
     <mesh castShadow receiveShadow>
       <latheGeometry args={[outerProfile, 192]} />
       <meshPhysicalMaterial color={color} map={texture} roughness={0.2} metalness={0} clearcoat={0.22} clearcoatRoughness={0.18} />
@@ -52,26 +52,26 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
       <latheGeometry args={[innerProfile, 192]} />
       <meshPhysicalMaterial color="#f7f5f1" side={THREE.DoubleSide} roughness={0.24} />
     </mesh>
-    <mesh position={[0, 0.132, 0]}>
+    <mesh position={[0, 0.161, 0]}>
       <circleGeometry args={[0.405, 160]} />
       <meshStandardMaterial color="#e9e5df" side={THREE.DoubleSide} roughness={0.3} />
     </mesh>
-    <mesh position={[0, 0.852, 0]} rotation={[Math.PI / 2, 0, 0]}>
+    <mesh position={[0, 1.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
       <torusGeometry args={[0.491, 0.012, 16, 192]} />
-      <meshPhysicalMaterial color={color} roughness={0.18} clearcoat={0.3} />
+      <meshPhysicalMaterial color={color} roughness={0.2} clearcoat={0.24} />
     </mesh>
     <mesh castShadow receiveShadow>
       <tubeGeometry args={[handleCurve, 160, 0.073, 32, false]} />
       <meshPhysicalMaterial color={handleColor} roughness={0.2} clearcoat={0.25} clearcoatRoughness={0.18} />
     </mesh>
-    <mesh position={[0, 0.055, 0]}>
+    <mesh position={[0, 0.067, 0]}>
       <cylinderGeometry args={[0.425, 0.425, 0.035, 160]} />
       <meshStandardMaterial color={color} roughness={0.25} />
     </mesh>
   </group>;
 }
 function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
-  return <Canvas camera={{ position: [0.12, 1.02, 4.15], fov: 29 }} dpr={[1, 1.7]} shadows>
+  return <Canvas camera={{ position: [0.12, 1.18, 4.35], fov: 29 }} dpr={[1, 1.7]} shadows>
     <hemisphereLight args={["#ffffff", "#a99b8d", 1.45]} />
     <ambientLight intensity={0.3} />
     <directionalLight position={[-3, 4, 4]} intensity={2.2} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
