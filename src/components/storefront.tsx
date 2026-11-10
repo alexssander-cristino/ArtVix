@@ -44,17 +44,23 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
     new THREE.Vector3(0.455, 0.225, 0.015)
   ].map(point => new THREE.Vector3(point.x, point.y * 1.22, point.z)), false, "centripetal", 0.35), []);
   return <group position={[0, -0.52, 0]}>
+    {/* Corpo cerâmico: a cor é independente da arte aplicada. */}
     <mesh castShadow receiveShadow>
       <latheGeometry args={[outerProfile, 192]} />
-      <meshPhysicalMaterial color={color} map={texture} roughness={0.2} metalness={0} clearcoat={0.22} clearcoatRoughness={0.18} />
+      <meshPhysicalMaterial color={color} roughness={0.2} metalness={0} clearcoat={0.22} clearcoatRoughness={0.18} />
+    </mesh>
+    {/* Arte em uma camada transparente sobre a cerâmica, sem tingir o desenho. */}
+    <mesh scale={[1.0015, 1, 1.0015]} renderOrder={1}>
+      <latheGeometry args={[outerProfile, 192]} />
+      <meshBasicMaterial map={texture} transparent alphaTest={0.015} depthWrite={false} polygonOffset polygonOffsetFactor={-1} side={THREE.FrontSide} toneMapped={false} />
     </mesh>
     <mesh>
       <latheGeometry args={[innerProfile, 192]} />
-      <meshPhysicalMaterial color="#f7f5f1" side={THREE.DoubleSide} roughness={0.24} />
+      <meshPhysicalMaterial color={color} side={THREE.DoubleSide} roughness={0.24} />
     </mesh>
     <mesh position={[0, 0.161, 0]}>
       <circleGeometry args={[0.405, 160]} />
-      <meshStandardMaterial color="#e9e5df" side={THREE.DoubleSide} roughness={0.3} />
+      <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.3} />
     </mesh>
     <mesh position={[0, 1.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
       <torusGeometry args={[0.491, 0.012, 16, 192]} />
@@ -154,8 +160,6 @@ export default function Storefront() {
       }));
       if (cancelled) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
       layers.forEach((layer, index) => {
         ctx.save();
         ctx.translate(1024 + layer.x * 6, 512 - layer.y * 4.5);
