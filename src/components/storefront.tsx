@@ -44,17 +44,19 @@ function Mug({ color, handleColor, texture }: { color: string; handleColor: stri
   </group>;
 }
 function MugScene({ color, handleColor, texture }: { color: string; handleColor: string; texture: THREE.CanvasTexture }) {
-  return <Canvas camera={{ position: [1.9, 1.35, 2.3], fov: 34 }} dpr={[1, 1.7]}>
-    <ambientLight intensity={1.6} />
-    <directionalLight position={[3, 4, 5]} intensity={2.5} />
-    <directionalLight position={[-3, 2, -2]} intensity={1.1} />
+  return <Canvas camera={{ position: [1.9, 1.35, 2.3], fov: 34 }} dpr={[1, 1.7]} shadows>
+    <hemisphereLight args={["#ffffff", "#b8a99a", 1.15]} />
+    <ambientLight intensity={0.55} />
+    <directionalLight position={[3, 5, 4]} intensity={2.7} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+    <directionalLight position={[-3, 2, -2]} intensity={1.35} />
+    <pointLight position={[-2, 1, 3]} intensity={0.45} color="#fff0df" />
     <Mug color={color} handleColor={handleColor} texture={texture} />
     <OrbitControls enablePan={false} minDistance={2.2} maxDistance={5} minPolarAngle={0.4} maxPolarAngle={2.4} />
   </Canvas>;
 }
 
 export default function Storefront() {
-  const [layers, setLayers] = useState<Layer[]>([{ id: 1, kind: "text", value: "Seu nome aqui", color: "#ffffff", font: "Arial", size: 42, x: 0, y: 0 }]);
+  const [layers, setLayers] = useState<Layer[]>([{ id: 1, kind: "text", value: "Seu nome aqui", color: "#a45d48", font: "Arial", size: 42, x: 0, y: 0 }]);
   const [active, setActive] = useState(1);
   const [mugColor, setMugColor] = useState("#f3eee7");
   const [handleColor, setHandleColor] = useState("#f3eee7");
@@ -96,6 +98,8 @@ export default function Storefront() {
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.anisotropy = 8;
+    // Centraliza a arte na face voltada para a câmera inicial da caneca.
+    tex.offset.x = 0.39;
     return tex;
   }, []);
 
@@ -146,7 +150,7 @@ export default function Storefront() {
 
   const addText = () => {
     const id = Date.now();
-    setLayers(prev => [...prev, { id, kind: "text", value: "Novo texto", color: "#ffffff", font: "Arial", size: 42, x: 0, y: 0 }]);
+    setLayers(prev => [...prev, { id, kind: "text", value: "Novo texto", color: "#a45d48", font: "Arial", size: 42, x: 0, y: 0 }]);
     setActive(id); setTab("text");
   };
   const upload = (file?: File) => {
